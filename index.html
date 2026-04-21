@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>作品畫廊</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow-x: hidden; /* 允許垂直捲動以閱讀說明 */
+      font-family: "Microsoft JhengHei", sans-serif;
+      color: white;
+      background-color: #0a1e3c;
+    }
+
+    header {
+      text-align: center;
+      font-size: 30px;
+      margin-top: 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* 主要選單區域 */
+    #menu {
+      height: 80vh; /* 給予足夠高度顯示魚兒 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 80px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .work-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .fishBtn {
+      width: 120px;
+      height: 80px;
+      transition: 0.3s;
+    }
+
+    .work-item:hover .fishBtn {
+      transform: scale(1.2);
+    }
+
+    .label {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 18px;
+      background: rgba(255,255,255,0.1);
+      padding: 5px 15px;
+      border-radius: 20px;
+    }
+
+    /* ⭐ 新增：下方的文字說明區塊 */
+    .description-section {
+      width: 80%;
+      max-width: 800px;
+      margin: 0 auto 50px auto;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px); /* 毛玻璃效果 */
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      line-height: 1.8;
+      position: relative;
+      z-index: 2;
+    }
+
+    .description-section h2 {
+      border-bottom: 2px solid #00ff96;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      color: #00ff96;
+    }
+
+    .description-section ul {
+      padding-left: 20px;
+    }
+
+    .description-section li {
+      margin-bottom: 10px;
+    }
+
+    .code-tag {
+      background: rgba(0,0,0,0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #ffcc66;
+      font-family: monospace;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      z-index: 10;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #frame {
+      width: 85%;
+      height: 80%;
+      border: none;
+      border-radius: 10px;
+      background: white;
+    }
+
+    #closeBtn {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 30px;
+      cursor: pointer;
+    }
+
+    #bgCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>🌊 互動作品畫廊 🌊</header>
+
+<div id="menu">
+  <div class="work-item" onclick="openWork(1)">
+    <div class="fishBtn" id="fish1"></div>
+    <div class="label">作業一</div>
+  </div>
+
+  <div class="work-item" onclick="openWork(2)">
+    <div class="fishBtn" id="fish2"></div>
+    <div class="label">作業二</div>
+  </div>
+</div>
+
+<div class="description-section">
+  <h2>🛠️ 指令運用與技術說明</h2>
+  <p>本學期透過 p5.js 學習了程式繪圖的核心邏輯，並將其運用在此海底主題畫廊中：</p>
+  <ul>
+    <li><strong>物件導向程式設計 (Class)：</strong> 使用 <span class="code-tag">class Seaweed</span> 封裝海草的屬性與行為，透過 <span class="code-tag">constructor</span> 初始化位置，並利用陣列管理多個海草物件。</li>
+    <li><strong>數學三角函數：</strong> 運用 <span class="code-tag">sin()</span> 函數結合 <span class="code-tag">frameCount</span>，計算出規律的海浪擺動與魚尾撥動效果。</li>
+    <li><strong>互動偵測：</strong> 使用 <span class="code-tag">dist()</span> 指令計算滑鼠與海草段落的距離，實現滑鼠靠近時海草自動避開的互動反饋。</li>
+    <li><strong>實例模式 (Instance Mode)：</strong> 為了在同一個網頁中運行多個不同的 p5 畫布（背景、作業一、作業二），運用了 <span class="code-tag">new p5()</span> 封裝技術，避免全域變數衝突。</li>
+    <li><strong>動態響應：</strong> 透過 <span class="code-tag">windowResized()</span> 與相對單位計算，確保海底環境在不同視窗大小下都能自動重新佈局。</li>
+  </ul>
+</div>
+
+<div id="overlay" onclick="bgClose(event)">
+  <div id="closeBtn" onclick="closeWork()">✖</div>
+  <iframe id="frame"></iframe>
+</div>
+
+<script>
+function openWork(n) {
+  const overlay = document.getElementById("overlay");
+  const frame = document.getElementById("frame");
+  overlay.style.display = "flex";
+  frame.src = n === 1 ? "https://414730431tku-eng.github.io/0409/" : "https://414730431tku-eng.github.io/-/";
+}
+
+function closeWork() {
+  document.getElementById("overlay").style.display = "none";
+  document.getElementById("frame").src = "";
+}
+
+function bgClose(e) { if (e.target.id === "overlay") closeWork(); }
+
+// ===== 背景生態動畫 =====
+let seaweeds = [];
+let bubbles = [];
+
+function setup() {
+  let c = createCanvas(windowWidth, windowHeight);
+  c.id("bgCanvas");
+  c.parent(document.body);
+  for (let i = 0; i < 18; i++) { seaweeds.push(new Seaweed(i * (width / 18))); }
+  for (let i = 0; i < 45; i++) {
+    bubbles.push({ x: random(width), y: random(height), r: random(4, 10), speed: random(0.5, 1.5) });
+  }
+}
+
+function draw() {
+  background(10, 30, 60, 100);
+  fill(200, 240, 255, 120);
+  noStroke();
+  for (let b of bubbles) {
+    ellipse(b.x, b.y, b.r);
+    b.y -= b.speed;
+    if (b.y < -10) { b.y = height + 10; b.x = random(width); }
+  }
+  for (let s of seaweeds) { s.update(); s.display(); }
+}
+
+class Seaweed {
+  constructor(x) { this.x = x; this.offset = random(1000); }
+  update() { this.offset += 0.02; }
+  display() {
+    stroke(0, 255, 150, 180);
+    strokeWeight(3);
+    noFill();
+    beginShape();
+    for (let y = height; y > height - 350; y -= 8) {
+      let wave = sin(y * 0.03 + this.offset) * 25;
+      // 簡單滑鼠互動
+      let d = dist(mouseX, mouseY, this.x + wave, y);
+      let push = d < 100 ? map(d, 0, 100, 30, 0) * (mouseX > this.x ? -1 : 1) : 0;
+      curveVertex(this.x + wave + push, y);
+    }
+    endShape();
+  }
+}
+
+function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+
+// ===== 魚兒按鈕 =====
+function drawFish(canvasId, color) {
+  let sketch = function(p) {
+    p.setup = function() { p.createCanvas(120, 80).parent(document.getElementById(canvasId)); };
+    p.draw = function() {
+      p.clear();
+      let wiggle = p.sin(p.frameCount * 0.1) * 4;
+      let tailWiggle = p.sin(p.frameCount * 0.15) * 12;
+      p.push();
+      p.translate(0, wiggle);
+      p.fill(color); p.noStroke();
+      p.beginShape();
+      p.vertex(20, 40);
+      p.bezierVertex(40, 10, 80, 10, 100, 40);
+      p.bezierVertex(80, 70, 40, 70, 20, 40);
+      p.endShape();
+      p.triangle(20, 40, 0, 20 + tailWiggle, 0, 60 - tailWiggle);
+      p.fill(0); p.circle(75, 35, 5);
+      p.pop();
+    };
+  };
+  new p5(sketch);
+}
+
+drawFish("fish1", "#ffcc66");
+drawFish("fish2", "#66ccff");
+</script>
+
+</body>
+</html>
